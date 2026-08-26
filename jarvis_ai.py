@@ -1,6 +1,7 @@
 """
 JARVIS - Iron Man Style AI Assistant
 A sophisticated AI model with JARVIS-like voice, computer control, and web browsing capabilities
+Enhanced with continuous microphone listening and voice interaction
 """
 
 import os
@@ -24,6 +25,7 @@ class JARVISAssistant:
         self.is_listening = True
         self.master_name = "Sir"
         self.response_delay = 0.5
+        self.mic = None
         
     def setup_voice(self):
         """Configure JARVIS voice to sound like the British assistant from Iron Man"""
@@ -32,45 +34,73 @@ class JARVISAssistant:
         
         # Try to set British English voice for JARVIS-like quality
         voices = self.engine.getProperty('voices')
+        print("\n🎤 Available Voices:")
+        for i, voice in enumerate(voices):
+            print(f"  {i}: {voice.name}")
+        
         for voice in voices:
-            if 'english' in voice.languages[0].lower() or 'en' in voice.id.lower():
-                if 'male' in voice.name.lower() or 'david' in voice.name.lower():
-                    self.engine.setProperty('voice', voice.id)
-                    break
+            voice_name = voice.name.lower()
+            # Prefer British or male voices
+            if any(keyword in voice_name for keyword in ['british', 'uk', 'david', 'male', 'james']):
+                self.engine.setProperty('voice', voice.id)
+                print(f"\n✓ Selected voice: {voice.name}")
+                break
     
     def speak(self, text):
         """Speak text with JARVIS voice characteristics"""
         print(f"\n🤖 JARVIS: {text}\n")
-        self.engine.say(text)
-        self.engine.runAndWait()
+        try:
+            self.engine.say(text)
+            self.engine.runAndWait()
+        except Exception as e:
+            print(f"Error speaking: {e}")
     
-    def listen(self):
-        """Listen for voice commands continuously"""
-        with sr.Microphone() as source:
-            print("\n👂 Listening...\n")
-            self.recognizer.adjust_for_ambient_noise(source, duration=1)
-            try:
-                audio = self.recognizer.listen(source, timeout=10)
-                command = self.recognizer.recognize_google(audio)
-                return command.lower()
-            except sr.UnknownValueError:
-                self.speak("I apologize, Sir. I did not catch that. Could you please repeat?")
-                return None
-            except sr.RequestError:
-                self.speak("My apologies, Sir. There seems to be an issue with the audio service.")
-                return None
+    def listen_for_command(self):
+        """Listen for voice commands with improved microphone access"""
+        try:
+            with sr.Microphone() as source:
+                print("\n👂 Listening for your command...\n")
+                
+                # Adjust for ambient noise
+                self.recognizer.adjust_for_ambient_noise(source, duration=0.5)
+                
+                # Set timeouts for better responsiveness
+                self.recognizer.energy_threshold = 4000
+                
+                # Listen for audio (timeout after 15 seconds if no speech detected)
+                audio = self.recognizer.listen(source, timeout=15, phrase_time_limit=10)
+                
+                print("🔄 Processing speech...\n")
+                
+                try:
+                    # Use Google Speech Recognition
+                    command = self.recognizer.recognize_google(audio)
+                    print(f"📝 You said: {command}\n")
+                    return command.lower()
+                
+                except sr.UnknownValueError:
+                    self.speak("I apologize, Sir. I did not catch that. Could you please repeat?")
+                    return None
+                except sr.RequestError as e:
+                    self.speak(f"I am unable to access the speech recognition service at the moment, Sir. {str(e)}")
+                    return None
+        
+        except Exception as e:
+            print(f"❌ Microphone error: {e}")
+            self.speak("There seems to be an issue with the microphone, Sir.")
+            return None
     
     def open_application(self, app_name):
         """Open applications on the computer"""
         app_commands = {
-            'chrome': ['google-chrome', 'chrome.exe'],
-            'firefox': ['firefox'],
+            'chrome': ['google-chrome', 'chrome.exe', 'open -a "Google Chrome"'],
+            'firefox': ['firefox', 'firefox.exe'],
             'edge': ['microsoft-edge', 'msedge.exe'],
-            'notepad': ['notepad', 'gedit'],
-            'calculator': ['gnome-calculator', 'calc.exe'],
-            'spotify': ['spotify'],
+            'notepad': ['notepad', 'gedit', 'nano'],
+            'calculator': ['gnome-calculator', 'calc.exe', 'open -a "Calculator"'],
+            'spotify': ['spotify', 'snap run spotify'],
             'vlc': ['vlc'],
-            'vscode': ['code'],
+            'vscode': ['code', 'code.exe'],
         }
         
         for cmd in app_commands.get(app_name.lower(), []):
@@ -138,7 +168,6 @@ class JARVISAssistant:
         """Control system volume"""
         if action == 'up':
             self.speak("Increasing volume, Sir.")
-            # Volume control commands vary by OS
         elif action == 'down':
             self.speak("Decreasing volume, Sir.")
         elif action == 'mute':
@@ -150,7 +179,7 @@ class JARVISAssistant:
             return
         
         # Greeting commands
-        if 'hello' in command or 'hi' in command or 'wake up' in command:
+        if any(word in command for word in ['hello', 'hi', 'wake up', 'hey jarvis']):
             self.speak(f"Good day, {self.master_name}. I am fully operational and at your service.")
         
         # Search and browse commands
@@ -185,7 +214,7 @@ class JARVISAssistant:
             self.open_application('calculator')
         
         # Time and weather
-        elif 'time' in command:
+        elif 'time' in command or 'what time' in command:
             self.get_time()
         elif 'weather' in command:
             self.get_weather()
@@ -203,14 +232,18 @@ class JARVISAssistant:
         # System commands
         elif 'shutdown' in command or 'power down' in command:
             self.speak("Initiating shutdown sequence, Sir.")
-            os.system('shutdown -s -t 60')
+            time.sleep(2)
+            # Uncomment to actually shutdown:
+            # os.system('shutdown -s -t 60')
         elif 'sleep' in command or 'hibernation' in command:
             self.speak("Entering sleep mode, Sir.")
-            os.system('rundll32.exe powrprof.dll,SetSuspendState 0,1,0')
+            time.sleep(2)
+            # Uncomment to actually sleep:
+            # os.system('rundll32.exe powrprof.dll,SetSuspendState 0,1,0')
         
         # Goodbye
-        elif 'goodbye' in command or 'exit' in command or 'quit' in command or 'shut down jarvis' in command:
-            self.speak("Very good, Sir. I shall await your next command. Powering down auxiliary systems.")
+        elif any(word in command for word in ['goodbye', 'exit', 'quit', 'shut down', 'stop listening']):
+            self.speak("Very good, Sir. It has been a pleasure serving you. Powering down.")
             self.is_listening = False
         
         else:
@@ -218,49 +251,69 @@ class JARVISAssistant:
     
     def initialize(self):
         """JARVIS initialization sequence"""
+        print("\n" + "="*60)
+        print("🤖  J.A.R.V.I.S. INITIALIZING...")
+        print("="*60 + "\n")
+        
         self.speak("Good morning, Sir. I am JARVIS, your artificial intelligence assistant. Systems nominal. All indicators are green.")
-        self.speak("I am equipped with advanced computer control capabilities, web browsing, and voice recognition. How may I be of service?")
+        self.speak("I am equipped with advanced computer control capabilities, web browsing, and voice recognition. I am always listening.")
+        self.speak("How may I be of service?")
     
-    def run(self):
-        """Main listening loop - always listening"""
+    def continuous_listening_loop(self):
+        """Main continuous listening loop - always listening for commands"""
         self.initialize()
         
         while self.is_listening:
             try:
-                print("\n" + "="*50)
-                print("🎤 JARVIS IS LISTENING...")
-                print("="*50)
+                print("\n" + "="*60)
+                print("🎤 JARVIS IS ALWAYS LISTENING - SPEAK NOW")
+                print("="*60)
                 
-                command = self.listen()
+                # Listen for command
+                command = self.listen_for_command()
                 
                 if command:
-                    print(f"\n📝 Command Received: {command}")
+                    print(f"✓ Command received: '{command}'")
                     self.process_command(command)
+                else:
+                    print("⚠️  No command detected")
                 
+                # Brief pause before listening again
                 time.sleep(self.response_delay)
             
             except KeyboardInterrupt:
+                print("\n\n⏹️  Shutdown signal received...")
                 self.speak("Shutting down, Sir. It has been a pleasure serving you.")
                 break
             except Exception as e:
-                print(f"Error: {e}")
-                self.speak("I apologize, Sir. An error has occurred.")
+                print(f"\n❌ Error: {e}")
+                self.speak("An error has occurred, Sir. Resuming listening.")
+                time.sleep(1)
 
 
 def main():
-    """Initialize and run JARVIS"""
+    """Initialize and run JARVIS with continuous listening"""
     print("\n" + "="*60)
     print("🤖  J.A.R.V.I.S. - IRON MAN AI ASSISTANT  🤖")
     print("="*60)
-    print("Starting up auxiliary systems...\n")
+    print("\n📋 Starting up auxiliary systems...")
+    print("🔧 Initializing microphone access...")
+    print("🎧 Configuring voice synthesis...")
     
     try:
         jarvis = JARVISAssistant()
-        jarvis.run()
+        print("\n✓ All systems ready!\n")
+        
+        # Start continuous listening
+        jarvis.continuous_listening_loop()
+        
     except ImportError as e:
-        print(f"⚠️  Missing dependency: {e}")
+        print(f"\n❌ Missing dependency: {e}")
         print("\nPlease install required packages:")
         print("pip install SpeechRecognition pyttsx3 Pillow requests")
+    except Exception as e:
+        print(f"\n❌ Fatal error: {e}")
+        print("Please check your microphone and audio settings.")
 
 
 if __name__ == "__main__":
