@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 J.A.R.V.I.S. - AI Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+
+        .container {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            font-size: 60px;
+            margin-bottom: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        h1 {
+            font-size: 32px;
+            color: #ffd700;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        .display {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #ffd700;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .display-label {
+            font-size: 12px;
+            color: #ffd700;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .display-text {
+            font-size: 16px;
+            color: #fff;
+            min-height: 20px;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .btn-listen {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            color: #000;
+            font-size: 18px;
+            padding: 20px;
+        }
+
+        .btn-listen:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .btn-listen:active {
+            transform: scale(0.95);
+        }
+
+        .btn-listen.listening {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8787 100%);
+            color: #fff;
+            animation: listening 1s infinite;
+        }
+
+        @keyframes listening {
+            0%, 100% { box-shadow: 0 0 10px rgba(255, 107, 107, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(255, 107, 107, 0.9); }
+        }
+
+        .btn-secondary {
+            background: rgba(255, 215, 0, 0.2);
+            color: #ffd700;
+            border: 2px solid #ffd700;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 215, 0, 0.4);
+            transform: scale(1.02);
+        }
+
+        .chat-history {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #ffd700;
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .chat-message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .user-message {
+            background: rgba(255, 215, 0, 0.1);
+            border-left: 3px solid #ffd700;
+        }
+
+        .ai-message {
+            background: rgba(100, 200, 255, 0.1);
+            border-left: 3px solid #64c8ff;
+        }
+
+        .status {
+            text-align: center;
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .status.ready {
+            color: #4ade80;
+        }
+
+        .status.error {
+            color: #ff6b6b;
+        }
+
+        .input-section {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        input {
+            padding: 12px;
+            border: 2px solid #ffd700;
+            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            font-size: 14px;
+        }
+
+        input::placeholder {
+            color: #666;
+        }
+
+        .btn-send {
+            background: rgba(255, 215, 0, 0.3);
+            color: #ffd700;
+            border: 2px solid #ffd700;
+            padding: 12px 20px;
+        }
+
+        .btn-send:hover {
+            background: rgba(255, 215, 0, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🤖</div>
+            <h1>J.A.R.V.I.S.</h1>
+            <p class="subtitle">Iron Man AI Assistant</p>
+        </div>
+
+        <div class="display">
+            <div class="display-label">Status</div>
+            <div class="display-text" id="status">Initializing...</div>
+        </div>
+
+        <div class="chat-history" id="chatHistory"></div>
+
+        <div class="input-section">
+            <input type="text" id="commandInput" placeholder="Type a command or use voice..." />
+            <button class="btn-send" onclick="sendTextCommand()">Send</button>
+        </div>
+
+        <div class="controls">
+            <button class="btn-listen" id="listenBtn" onclick="toggleListening()">🎤 LISTEN</button>
+            <button class="btn-secondary" onclick="clearHistory()">Clear</button>
+            <button class="btn-secondary" onclick="greetJarvis()">Greet</button>
+        </div>
+
+        <div class="status ready" id="statusText">✓ Ready to listen</div>
+    </div>
+
+    <script>
+        let isListening = false;
+        let recognition = null;
+
+        // Check for Web Speech API support
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                isListening = true;
+                updateButtonState();
+                updateStatus('Listening...');
+            };
+
+            recognition.onresult = (event) => {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+                if (transcript) {
+                    addMessage('user', transcript);
+                    processCommand(transcript);
+                }
+            };
+
+            recognition.onerror = (event) => {
+                updateStatus('Error: ' + event.error, 'error');
+                isListening = false;
+                updateButtonState();
+            };
+
+            recognition.onend = () => {
+                isListening = false;
+                updateButtonState();
+                updateStatus('Ready to listen');
+            };
+        }
+
+        function toggleListening() {
+            if (!recognition) {
+                updateStatus('Speech recognition not supported', 'error');
+                return;
+            }
+
+            if (isListening) {
+                recognition.stop();
+            } else {
+                recognition.start();
+            }
+        }
+
+        function updateButtonState() {
+            const btn = document.getElementById('listenBtn');
+            if (isListening) {
+                btn.classList.add('listening');
+                btn.textContent = '🔴 LISTENING...';
+            } else {
+                btn.classList.remove('listening');
+                btn.textContent = '🎤 LISTEN';
+            }
+        }
+
+        function updateStatus(message, type = 'normal') {
+            const statusEl = document.getElementById('statusText');
+            const displayEl = document.getElementById('status');
+            displayEl.textContent = message;
+            statusEl.textContent = message;
+            statusEl.className = 'status ' + (type === 'error' ? 'error' : 'ready');
+        }
+
+        function addMessage(type, text) {
+            const history = document.getElementById('chatHistory');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'chat-message ' + (type === 'user' ? 'user-message' : 'ai-message');
+            msgDiv.textContent = (type === 'user' ? 'You: ' : 'JARVIS: ') + text;
+            history.appendChild(msgDiv);
+            history.scrollTop = history.scrollHeight;
+        }
+
+        function processCommand(command) {
+            fetch('/api/process', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ command: command })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    addMessage('ai', data.response);
+                    updateStatus('Processing complete');
+                } else {
+                    updateStatus('Error: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                updateStatus('Connection error', 'error');
+                console.error('Error:', error);
+            });
+        }
+
+        function sendTextCommand() {
+            const input = document.getElementById('commandInput');
+            const command = input.value.trim();
+            if (command) {
+                addMessage('user', command);
+                processCommand(command);
+                input.value = '';
+            }
+        }
+
+        function clearHistory() {
+            document.getElementById('chatHistory').innerHTML = '';
+        }
+
+        function greetJarvis() {
+            addMessage('user', 'Hello JARVIS');
+            processCommand('hello jarvis');
+        }
+
+        // Allow Enter key to send message
+        document.getElementById('commandInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendTextCommand();
+            }
+        });
+
+        // Initialize
+        updateStatus('✓ JARVIS Online - Ready to serve');
+    </script>
+</body>
+</html>
